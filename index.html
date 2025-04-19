@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Xử Lý Ảnh Màu</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Heroicons CDN -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/@heroicons/vue@2.1.5/dist/heroicons.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body
+    class="bg-gray-50 min-h-screen flex items-center justify-center p-4 sm:p-6"
+  >
+    <div class="bg-white rounded-2xl shadow-xl p-6 sm:p-8 max-w-5xl w-full">
+      <h1 class="text-3xl font-bold text-center text-gray-900 mb-6">
+        Xử Lý Ảnh Màu
+      </h1>
+
+      <!-- Input tải ảnh -->
+      <div class="flex justify-center mb-6">
+        <label class="relative flex items-center cursor-pointer">
+          <input type="file" id="imageInput" accept="image/*" class="hidden" />
+          <span
+            class="inline-flex items-center px-4 py-2 bg-indigo-100 text-indigo-700 rounded-full hover:bg-indigo-200 transition duration-300"
+          >
+            <svg
+              class="w-5 h-5 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+              ></path>
+            </svg>
+            Tải Ảnh
+          </span>
+        </label>
+      </div>
+
+      <!-- Thanh kéo độ sáng và độ tương phản -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+        <div class="flex items-center justify-center space-x-3">
+          <label class="font-medium text-gray-700"
+            >Độ sáng:
+            <span id="brightnessValue" class="text-indigo-600 font-semibold"
+              >1.0</span
+            ></label
+          >
+          <input
+            type="range"
+            id="brightnessSlider"
+            min="0.5"
+            max="3.0"
+            step="0.1"
+            value="1.0"
+            class="w-44 h-2 bg-gray-200 rounded-lg accent-indigo-600 cursor-pointer"
+          />
+        </div>
+        <div class="flex items-center justify-center space-x-3">
+          <label class="font-medium text-gray-700"
+            >Độ tương phản:
+            <span id="contrastValue" class="text-indigo-600 font-semibold"
+              >1.0</span
+            ></label
+          >
+          <input
+            type="range"
+            id="contrastSlider"
+            min="0.5"
+            max="3.0"
+            step="0.1"
+            value="1.0"
+            class="w-44 h-2 bg-gray-200 rounded-lg accent-indigo-600 cursor-pointer"
+          />
+        </div>
+      </div>
+
+      <!-- Nút tách kênh màu -->
+      <div class="flex justify-center mb-8">
+        <button
+          onclick="splitChannels()"
+          class="inline-flex items-center px-6 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition duration-300"
+        >
+          <svg
+            class="w-5 h-5 mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"
+            ></path>
+          </svg>
+          Tách Kênh Màu
+        </button>
+      </div>
+
+      <!-- Canvas ảnh gốc và ảnh chỉnh sửa -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div>
+          <h2 class="text-lg font-semibold text-gray-700 mb-2 text-center">
+            Ảnh Gốc
+          </h2>
+          <canvas
+            id="originalCanvas"
+            class="border border-gray-200 rounded-lg w-full shadow-sm"
+          ></canvas>
+        </div>
+        <div>
+          <h2 class="text-lg font-semibold text-gray-700 mb-2 text-center">
+            Ảnh Đã Chỉnh Sửa
+          </h2>
+          <canvas
+            id="processedCanvas"
+            class="border border-gray-200 rounded-lg w-full shadow-sm"
+          ></canvas>
+          <button
+            onclick="compressImage()"
+            class="mt-4 inline-flex items-center justify-center px-6 py-2 bg-green-600 text-white rounded-full hover:bg-green-700 transition duration-300 w-full"
+          >
+            <svg
+              class="w-5 h-5 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+              ></path>
+            </svg>
+            Nén Ảnh Đã Chỉnh Sửa (JPEG)
+          </button>
+        </div>
+      </div>
+
+      <!-- Canvas kênh màu -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div>
+          <h2 class="text-sm font-semibold text-gray-700 mb-2 text-center">
+            Kênh Đỏ
+          </h2>
+          <canvas
+            id="redCanvas"
+            class="border border-gray-200 rounded-lg w-full shadow-sm"
+          ></canvas>
+          <button
+            onclick="compressRedChannel()"
+            class="mt-3 inline-flex items-center justify-center px-4 py-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition duration-300 w-full"
+          >
+            <svg
+              class="w-5 h-5 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+              ></path>
+            </svg>
+            Nén Kênh Đỏ (JPEG)
+          </button>
+        </div>
+        <div>
+          <h2 class="text-sm font-semibold text-gray-700 mb-2 text-center">
+            Kênh Xanh Lá
+          </h2>
+          <canvas
+            id="greenCanvas"
+            class="border border-gray-200 rounded-lg w-full shadow-sm"
+          ></canvas>
+          <button
+            onclick="compressGreenChannel()"
+            class="mt-3 inline-flex items-center justify-center px-4 py-2 bg-green-500 text-white rounded-full hover:bg-green-600 transition duration-300 w-full"
+          >
+            <svg
+              class="w-5 h-5 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+              ></path>
+            </svg>
+            Nén Kênh Xanh Lá (JPEG)
+          </button>
+        </div>
+        <div>
+          <h2 class="text-sm font-semibold text-gray-700 mb-2 text-center">
+            Kênh Xanh Dương
+          </h2>
+          <canvas
+            id="blueCanvas"
+            class="border border-gray-200 rounded-lg w-full shadow-sm"
+          ></canvas>
+          <button
+            onclick="compressBlueChannel()"
+            class="mt-3 inline-flex items-center justify-center px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition duration-300 w-full"
+          >
+            <svg
+              class="w-5 h-5 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+              ></path>
+            </svg>
+            Nén Kênh Xanh Dương (JPEG)
+          </button>
+        </div>
+      </div>
+
+      <!-- Thông tin nén -->
+      <div
+        class="bg-gray-100 rounded-lg p-4 text-gray-700 text-center max-h-40 overflow-y-auto"
+      >
+        <p id="compressionInfo"></p>
+      </div>
+    </div>
+
+    <script>
+      const imageInput = document.getElementById("imageInput");
+      const originalCanvas = document.getElementById("originalCanvas");
+      const redCanvas = document.getElementById("redCanvas");
+      const greenCanvas = document.getElementById("greenCanvas");
+      const blueCanvas = document.getElementById("blueCanvas");
+      const processedCanvas = document.getElementById("processedCanvas");
+      const compressionInfo = document.getElementById("compressionInfo");
+      const brightnessSlider = document.getElementById("brightnessSlider");
+      const brightnessValue = document.getElementById("brightnessValue");
+      const contrastSlider = document.getElementById("contrastSlider");
+      const contrastValue = document.getElementById("contrastValue");
+      let originalImageData;
+
+      imageInput.addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onload = () => {
+            originalCanvas.width = img.width;
+            originalCanvas.height = img.height;
+            redCanvas.width = greenCanvas.width = blueCanvas.width = img.width;
+            redCanvas.height =
+              greenCanvas.height =
+              blueCanvas.height =
+                img.height;
+            processedCanvas.width = img.width;
+            processedCanvas.height = img.height;
+
+            const ctx = originalCanvas.getContext("2d");
+            ctx.drawImage(img, 0, 0);
+            originalImageData = ctx.getImageData(0, 0, img.width, img.height);
+            processedCanvas
+              .getContext("2d")
+              .putImageData(originalImageData, 0, 0);
+          };
+          img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+
+      function splitChannels() {
+        if (!originalImageData) {
+          compressionInfo.textContent = "Vui lòng tải ảnh trước!";
+          return;
+        }
+
+        const redData = new ImageData(
+          originalImageData.width,
+          originalImageData.height
+        );
+        const greenData = new ImageData(
+          originalImageData.width,
+          originalImageData.height
+        );
+        const blueData = new ImageData(
+          originalImageData.width,
+          originalImageData.height
+        );
+
+        for (let i = 0; i < originalImageData.data.length; i += 4) {
+          redData.data[i] = originalImageData.data[i];
+          redData.data[i + 1] = 0;
+          redData.data[i + 2] = 0;
+          redData.data[i + 3] = originalImageData.data[i + 3];
+
+          greenData.data[i] = 0;
+          greenData.data[i + 1] = originalImageData.data[i + 1];
+          greenData.data[i + 2] = 0;
+          greenData.data[i + 3] = originalImageData.data[i + 3];
+
+          blueData.data[i] = 0;
+          blueData.data[i + 1] = 0;
+          blueData.data[i + 2] = originalImageData.data[i + 2];
+          blueData.data[i + 3] = originalImageData.data[i + 3];
+        }
+
+        redCanvas.getContext("2d").putImageData(redData, 0, 0);
+        greenCanvas.getContext("2d").putImageData(greenData, 0, 0);
+        blueCanvas.getContext("2d").putImageData(blueData, 0, 0);
+      }
+
+      function adjustBrightness(factor) {
+        if (!originalImageData) return;
+
+        const newData = new ImageData(
+          originalImageData.width,
+          originalImageData.height
+        );
+        for (let i = 0; i < originalImageData.data.length; i += 4) {
+          newData.data[i] = Math.min(255, originalImageData.data[i] * factor);
+          newData.data[i + 1] = Math.min(
+            255,
+            originalImageData.data[i + 1] * factor
+          );
+          newData.data[i + 2] = Math.min(
+            255,
+            originalImageData.data[i + 2] * factor
+          );
+          newData.data[i + 3] = originalImageData.data[i + 3];
+        }
+        return newData;
+      }
+
+      function adjustContrast(factor) {
+        if (!originalImageData) return;
+
+        const newData = new ImageData(
+          originalImageData.width,
+          originalImageData.height
+        );
+        const contrast = (factor * (255 + factor)) / (255 * (factor - 1));
+
+        for (let i = 0; i < originalImageData.data.length; i += 4) {
+          newData.data[i] = Math.min(
+            255,
+            Math.max(
+              0,
+              ((originalImageData.data[i] / 255 - 0.5) * contrast + 0.5) * 255
+            )
+          );
+          newData.data[i + 1] = Math.min(
+            255,
+            Math.max(
+              0,
+              ((originalImageData.data[i + 1] / 255 - 0.5) * contrast + 0.5) *
+                255
+            )
+          );
+          newData.data[i + 2] = Math.min(
+            255,
+            Math.max(
+              0,
+              ((originalImageData.data[i + 2] / 255 - 0.5) * contrast + 0.5) *
+                255
+            )
+          );
+          newData.data[i + 3] = originalImageData.data[i + 3];
+        }
+        return newData;
+      }
+
+      function updateImage() {
+        const brightness = parseFloat(brightnessSlider.value);
+        const contrast = parseFloat(contrastSlider.value);
+
+        brightnessValue.textContent = brightness.toFixed(1);
+        contrastValue.textContent = contrast.toFixed(1);
+
+        let processedData = adjustBrightness(brightness);
+        if (contrast !== 1.0) {
+          processedData = adjustContrast(contrast);
+        }
+
+        processedCanvas.getContext("2d").putImageData(processedData, 0, 0);
+      }
+
+      brightnessSlider.addEventListener("input", updateImage);
+      contrastSlider.addEventListener("input", updateImage);
+
+      function compressImage() {
+        if (!originalImageData) {
+          compressionInfo.textContent = "Vui lòng tải ảnh trước!";
+          return;
+        }
+
+        const ctx = processedCanvas.getContext("2d");
+        const processedImageData = ctx.getImageData(
+          0,
+          0,
+          processedCanvas.width,
+          processedCanvas.height
+        );
+        const hasValidData = processedImageData.data.some(
+          (value) => value !== 0
+        );
+
+        if (!hasValidData) {
+          compressionInfo.textContent =
+            "Vui lòng chỉnh sửa ảnh (độ sáng/tương phản) trước khi nén!";
+          return;
+        }
+
+        const quality = 0.7;
+        const jpegDataUrl = processedCanvas.toDataURL("image/jpeg", quality);
+        const jpegSize = Math.round((jpegDataUrl.length * 3) / 4 / 1024);
+        const originalSize = processedImageData.data.length / 1024;
+        const compressionRatio = (originalSize / jpegSize).toFixed(2);
+
+        compressionInfo.textContent = `Kích thước gốc (đã chỉnh sửa): ${originalSize.toFixed(
+          2
+        )} KB, Kích thước nén (JPEG): ${jpegSize} KB, Tỷ lệ nén: ${compressionRatio}`;
+
+        const downloadLink = document.createElement("a");
+        downloadLink.href = jpegDataUrl;
+        downloadLink.download = "edited_compressed_image.jpg";
+        downloadLink.click();
+      }
+
+      function compressRedChannel() {
+        if (!originalImageData) {
+          compressionInfo.textContent = "Vui lòng tải ảnh trước!";
+          return;
+        }
+
+        const ctx = redCanvas.getContext("2d");
+        const redImageData = ctx.getImageData(
+          0,
+          0,
+          redCanvas.width,
+          redCanvas.height
+        );
+        const hasValidData = redImageData.data.some((value) => value !== 0);
+
+        if (!hasValidData) {
+          compressionInfo.textContent =
+            "Vui lòng tách kênh màu trước khi nén kênh đỏ!";
+          return;
+        }
+
+        const quality = 0.7;
+        const jpegDataUrl = redCanvas.toDataURL("image/jpeg", quality);
+        const jpegSize = Math.round((jpegDataUrl.length * 3) / 4 / 1024);
+        const originalSize = redImageData.data.length / 1024;
+        const compressionRatio = (originalSize / jpegSize).toFixed(2);
+
+        compressionInfo.textContent = `Kích thước gốc (kênh đỏ): ${originalSize.toFixed(
+          2
+        )} KB, Kích thước nén (JPEG): ${jpegSize} KB, Tỷ lệ nén: ${compressionRatio}`;
+
+        const downloadLink = document.createElement("a");
+        downloadLink.href = jpegDataUrl;
+        downloadLink.download = "red_channel_compressed.jpg";
+        downloadLink.click();
+      }
+
+      function compressGreenChannel() {
+        if (!originalImageData) {
+          compressionInfo.textContent = "Vui lòng tải ảnh trước!";
+          return;
+        }
+
+        const ctx = greenCanvas.getContext("2d");
+        const greenImageData = ctx.getImageData(
+          0,
+          0,
+          greenCanvas.width,
+          greenCanvas.height
+        );
+        const hasValidData = greenImageData.data.some((value) => value !== 0);
+
+        if (!hasValidData) {
+          compressionInfo.textContent =
+            "Vui lòng tách kênh màu trước khi nén kênh xanh lá!";
+          return;
+        }
+
+        const quality = 0.7;
+        const jpegDataUrl = greenCanvas.toDataURL("image/jpeg", quality);
+        const jpegSize = Math.round((jpegDataUrl.length * 3) / 4 / 1024);
+        const originalSize = greenImageData.data.length / 1024;
+        const compressionRatio = (originalSize / jpegSize).toFixed(2);
+
+        compressionInfo.textContent = `Kích thước gốc (kênh xanh lá): ${originalSize.toFixed(
+          2
+        )} KB, Kích thước nén (JPEG): ${jpegSize} KB, Tỷ lệ nén: ${compressionRatio}`;
+
+        const downloadLink = document.createElement("a");
+        downloadLink.href = jpegDataUrl;
+        downloadLink.download = "green_channel_compressed.jpg";
+        downloadLink.click();
+      }
+
+      function compressBlueChannel() {
+        if (!originalImageData) {
+          compressionInfo.textContent = "Vui lòng tải ảnh trước!";
+          return;
+        }
+
+        const ctx = blueCanvas.getContext("2d");
+        const blueImageData = ctx.getImageData(
+          0,
+          0,
+          blueCanvas.width,
+          blueCanvas.height
+        );
+        const hasValidData = blueImageData.data.some((value) => value !== 0);
+
+        if (!hasValidData) {
+          compressionInfo.textContent =
+            "Vui lòng tách kênh màu trước khi nén kênh xanh dương!";
+          return;
+        }
+
+        const quality = 0.7;
+        const jpegDataUrl = blueCanvas.toDataURL("image/jpeg", quality);
+        const jpegSize = Math.round((jpegDataUrl.length * 3) / 4 / 1024);
+        const originalSize = blueImageData.data.length / 1024;
+        const compressionRatio = (originalSize / jpegSize).toFixed(2);
+
+        compressionInfo.textContent = `Kích thước gốc (kênh xanh dương): ${originalSize.toFixed(
+          2
+        )} KB, Kích thước nén (JPEG): ${jpegSize} KB, Tỷ lệ nén: ${compressionRatio}`;
+
+        const downloadLink = document.createElement("a");
+        downloadLink.href = jpegDataUrl;
+        downloadLink.download = "blue_channel_compressed.jpg";
+        downloadLink.click();
+      }
+    </script>
+  </body>
+</html>
